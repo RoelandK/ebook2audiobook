@@ -8,8 +8,11 @@ from .conf import (
     max_python_version, min_python_version, models_dir, os,
     output_formats, prog_version, python_env_dir,
     requirements_file, components_dir, root_dir, tmp_dir, run_dir, gradio_cache_dir, tmp_expire, max_ebook_textarea_length,
-    tts_dir, voice_formats, voices_dir, default_output_split, default_output_split_hours
+    tts_dir, voice_formats, voices_dir, default_output_split, default_output_split_hours,
+    default_abs_enabled, default_abs_server_url, default_abs_api_token, default_abs_library_id,
 )
+
+from .classes.audiobookshelf import upload_to_abs
 
 from .conf_lang import (
     abbreviations_mapping, chapter_word_mapping, default_language_code,
@@ -40,6 +43,10 @@ __all__ = [
     "output_formats", "prog_version", "python_env_dir",
     "requirements_file", "components_dir", "root_dir", "tmp_dir", "run_dir", "gradio_cache_dir", "tmp_expire", "max_ebook_textarea_length", 
     "tts_dir", "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
+    "default_abs_enabled", "default_abs_server_url", "default_abs_api_token", "default_abs_library_id",
+
+    # from lib.classes.audiobookshelf
+    "upload_to_abs",
 
     # from conf_lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",

@@ -231,3 +231,11 @@ default_output_format = 'm4b'
 default_output_channel = 'mono' # mono or stereo
 default_output_split = False
 default_output_split_hours = '6' # if the final ouput esceed outpout_split_hours * 2 hours the final file will be splitted by outpout_split_hours + the end if any.
+
+# ---------------------------------------------------------------------
+# Audiobookshelf upload
+# ---------------------------------------------------------------------
+default_abs_enabled = False
+default_abs_server_url = ''
+default_abs_api_token = ''
+default_abs_library_id = ''

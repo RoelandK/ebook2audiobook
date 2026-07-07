@@ -724,6 +724,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             with gr_row_output_split_hours:
                                                 gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown',elem_classes=['gr-markdown-output-split-hours'], value='Hours<br/>/ Part')
                                                 gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, scale=1)
+                                with gr.Accordion(label='Audiobookshelf', elem_id='gr_accordion_abs', open=False):
+                                    gr_abs_enabled = gr.Checkbox(label='Upload to Audiobookshelf', elem_id='gr_abs_enabled', value=default_abs_enabled, interactive=True)
+                                    gr_abs_server_url = gr.Textbox(label='Server URL', elem_id='gr_abs_server_url', placeholder='http://localhost:13378', value=default_abs_server_url, interactive=True)
+                                    gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', type='password', placeholder='eyJ...', value=default_abs_api_token, interactive=True)
+                                    gr_abs_library_id = gr.Textbox(label='Library ID', elem_id='gr_abs_library_id', placeholder='lib_abc123', value=default_abs_library_id, interactive=True)
                                 with gr.Group(elem_id='gr_group_session', elem_classes=['gr-group']):
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     gr_session_switch_disable_state = gr.State(None)
@@ -1131,7 +1136,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(25)])
+                            outputs = tuple([gr.update() for _ in range(30)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1209,7 +1214,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(25)])
+                outputs = tuple([gr.update() for _ in range(30)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -2053,6 +2058,30 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session['output_split'] = val
                 return gr.update(visible=val)
+
+            def _change_gr_abs_enabled(session_id, val):
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session['abs_enabled'] = val
+                return gr.update()
+
+            def _change_gr_abs_server_url(session_id, val):
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session['abs_server_url'] = val
+                return gr.update()
+
+            def _change_gr_abs_api_token(session_id, val):
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session['abs_api_token'] = val
+                return gr.update()
+
+            def _change_gr_abs_library_id(session_id, val):
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session['abs_library_id'] = val
+                return gr.update()
 
             def _click_gr_session_switch_btn(session_id:str, backup_session_id:str|None)->tuple:
                 try:
@@ -3007,6 +3036,26 @@ def build_interface(args:dict)->gr.Blocks:
             gr_output_split_hours.change(
                 fn=lambda session_id, val: _change_param('output_split_hours', session_id, str(val)),
                 inputs=[gr_session, gr_output_split_hours],
+                outputs=None
+            )
+            gr_abs_enabled.select(
+                fn=_change_gr_abs_enabled,
+                inputs=[gr_session, gr_abs_enabled],
+                outputs=None
+            )
+            gr_abs_server_url.change(
+                fn=_change_gr_abs_server_url,
+                inputs=[gr_session, gr_abs_server_url],
+                outputs=None
+            )
+            gr_abs_api_token.change(
+                fn=_change_gr_abs_api_token,
+                inputs=[gr_session, gr_abs_api_token],
+                outputs=None
+            )
+            gr_abs_library_id.change(
+                fn=_change_gr_abs_library_id,
+                inputs=[gr_session, gr_abs_library_id],
                 outputs=None
             )
             gr_session_switch_btn.click(
