@@ -503,7 +503,7 @@ def compare_dict_keys(d1, d2):
             "missing_in_d1": missing_in_d1,
         }
     for key in d1_keys.intersection(d2_keys):
-        nested_result = compare_keys(d1[key], d2[key])
+        nested_result = compare_dict_keys(d1[key], d2[key])
         if nested_result:
             return {key: nested_result}
     return None
@@ -1602,7 +1602,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             )
                         else:
                             text = re_ordinal.sub(
-                                lambda m: math2words(int(m.group(1)), lang, lang_iso1, tts_engine, is_num2words_compat),
+                                lambda m: math2words(m.group(1), lang, lang_iso1, tts_engine, is_num2words_compat),
                                 text
                             )
                         text = re.sub(
@@ -2783,12 +2783,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 ffmpeg_metadata += f"{tag('description')}={session['metadata']['description']}\n"
             if session['metadata'].get('publisher') and (is_mp4_like or is_mp3):
                 ffmpeg_metadata += f"{tag('publisher')}={session['metadata']['publisher']}\n"
-            if session['metadata'].get('published'):
+            if session['metadata'].get('date'):
                 try:
-                    if '.' in session['metadata']['published']:
-                        year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
+                    if '.' in session['metadata']['date']:
+                        year = datetime.strptime(session['metadata']['date'], '%Y-%m-%dT%H:%M:%S.%f%z').year
                     else:
-                        year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
+                        year = datetime.strptime(session['metadata']['date'], '%Y-%m-%dT%H:%M:%S%z').year
                 except Exception:
                     year = datetime.now().year
             else:
@@ -2797,12 +2797,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 ffmpeg_metadata += f"{tag('date')}={year}\n"
             else:
                 ffmpeg_metadata += f"{tag('year')}={year}\n"
-            if session['metadata'].get('identifiers') and isinstance(session['metadata']['identifiers'], dict):
+            if session['metadata'].get('identifier') and isinstance(session['metadata']['identifier'], dict):
                 if is_mp3 or is_mp4_like:
-                    isbn = session['metadata']['identifiers'].get('isbn')
+                    isbn = session['metadata']['identifier'].get('isbn')
                     if isbn:
                         ffmpeg_metadata += f"{tag('isbn')}={isbn}\n"
-                    asin = session['metadata']['identifiers'].get('mobi-asin')
+                    asin = session['metadata']['identifier'].get('mobi-asin')
                     if asin:
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
             start_time = 0
@@ -3445,7 +3445,7 @@ def convert_ebook(args:dict)->tuple:
                                     else:
                                         error = f"{model} could not be extracted or mandatory files are missing"
                                 else:
-                                    error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                    error = f"{os.path.basename(session['custom_model'])} is not a valid model or some required files are missing"
                             except ModuleNotFoundError as e:
                                 error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
                     if session.get('voice'):
@@ -3470,7 +3470,7 @@ def convert_ebook(args:dict)->tuple:
                         if not devices['CUDA']['found']:
                             session['device'] = devices['CPU']['proc']
                             msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                    elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
+                    elif session['device'] == devices['JETSON']['proc']:
                         if not devices['JETSON']['found']:
                             session['device'] = devices['CPU']['proc']
                             msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
