@@ -3150,11 +3150,15 @@ def build_interface(args: dict) -> gr.Blocks:
                     session["abs_library_id"] = val
                 return gr.update()
 
+            def _change_gr_output_chapter_mode(session_id, val):
+                session = context.get_session(session_id)
+                if session and session.get("id", False):
+                    session["output_chapter_mode"] = val
+
             def _change_gr_output_overwrite(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["output_overwrite"] = val
-                return gr.update()
 
             def _click_gr_session_switch_btn(
                 session_id: str, backup_session_id: str | None
@@ -4621,6 +4625,11 @@ def build_interface(args: dict) -> gr.Blocks:
             gr_abs_library_id.change(
                 fn=_change_gr_abs_library_id,
                 inputs=[gr_session, gr_abs_library_id],
+                outputs=None,
+            )
+            gr_output_chapter_mode.select(
+                fn=_change_gr_output_chapter_mode,
+                inputs=[gr_session, gr_output_chapter_mode],
                 outputs=None,
             )
             gr_output_overwrite.select(
