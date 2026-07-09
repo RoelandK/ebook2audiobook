@@ -276,11 +276,6 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
                 if tensors:
                     seg = torch.cat(tensors, dim=-1)
                     self.audio_save(sentence_file, seg, self.params["samplerate"])
-            # ponytail: release cached CUDA allocations after each batch
-            import gc
-
-            gc.collect()
-            torch.cuda.empty_cache()
         except Exception as e:
             error = f"batch flush error: {e}"
             print(error)
@@ -385,14 +380,13 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
 
             if len(self._batch_buffer) >= self.batch_size:
                 self._flush_batch()
-            # ponytail: flush any remaining partial batch
-            if self._batch_buffer:
-                self._flush_batch()
 
-            # Verify file was created (either by batch flush or empty sentence)
+            if self._batch_buffer or any(
+                any(c.isalnum() for c in str(p)) for p in sentence_parts
+            ):
+                return True, None
             if os.path.exists(sentence_file):
                 return True, None
-            # Empty sentence — write silence
             import torch
 
             silence = torch.zeros(1, int(self.params["samplerate"] * 0.3))

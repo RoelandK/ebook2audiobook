@@ -2861,6 +2861,22 @@ def block_hash(block: dict) -> str:
     ).hexdigest()
 
 
+def _chapter_cache_dir(session: dict) -> str:
+    """Persistent chapter cache dir next to the output audiobooks directory.
+
+    Keyed by content hash (block_hash), so it survives tmp dir cleanup
+    and works across fresh sessions for the same book + voice.
+
+    Stores combined chapter audio + per-sentence audio so VTT can be built.
+    """
+    cache = os.path.join(
+        session.get("audiobooks_dir") or os.path.join(session.get("process_dir", "")),
+        "chapter_cache",
+    )
+    os.makedirs(cache, exist_ok=True)
+    return cache
+
+
 def convert_chapters2audio(session_id: str) -> bool:
 
     def _reset_chapter_file(block_id: str) -> None:
@@ -3006,6 +3022,21 @@ def convert_chapters2audio(session_id: str) -> bool:
                     chapters_dir, f"{block_id}.{default_audio_proc_format}"
                 )
                 block_dir = os.path.join(sentences_dir, block_id)
+
+                # ponytail: persistent chapter cache — skip if already processed in a prior run
+                cached = os.path.join(
+                    _chapter_cache_dir(session),
+                    f"{current_hash}.{default_audio_proc_format}",
+                )
+                if os.path.exists(cached) and not block_changed:
+                    if not os.path.exists(chapter_audio_file):
+                        shutil.copy2(cached, chapter_audio_file)
+                    print(f"Chapter {ch_num} (block {x}) — found in cache, skipping")
+                    cnt = len(valid_idx)
+                    global_sent += cnt
+                    t.update(cnt)
+                    continue
+
                 if x < block_resume and not block_changed:
                     if not os.path.exists(chapter_audio_file):
                         show_alert(
@@ -3136,6 +3167,13 @@ def convert_chapters2audio(session_id: str) -> bool:
                             },
                         )
                         return False
+                    # ponytail: save to persistent chapter cache
+                    if os.path.exists(chapter_audio_file):
+                        cached = os.path.join(
+                            _chapter_cache_dir(session),
+                            f"{current_hash}.{default_audio_proc_format}",
+                        )
+                        shutil.copy2(chapter_audio_file, cached)
             # blocks_current['block_resume'] = 0
             # blocks_current['sentence_resume'] = 0
             session["blocks_current"] = blocks_current
@@ -4175,11 +4213,16 @@ def convert_ebook(args: dict) -> tuple:
             session["process_dir"] = os.path.join(
                 session["session_dir"],
                 hashlib.md5(
-                    (ebook_name + ("_" + language if session.get("translate_enabled") else "")).encode()
+                    (
+                        ebook_name
+                        + ("_" + language if session.get("translate_enabled") else "")
+                    ).encode()
                 ).hexdigest(),
             )
             session["chapters_dir"] = os.path.join(session["process_dir"], "chapters")
-            session["sentences_dir"] = os.path.join(session["chapters_dir"], "sentences")
+            session["sentences_dir"] = os.path.join(
+                session["chapters_dir"], "sentences"
+            )
             if session["is_gui_process"]:
                 session["final_name"] = (
                     ebook_name
@@ -4206,10 +4249,15 @@ def convert_ebook(args: dict) -> tuple:
                 )
                 os.makedirs(session["voice_dir"], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(
-                    os.path.join(session["process_dir"], ebook_name + "." + default_audio_proc_format)
+                    os.path.join(
+                        session["process_dir"],
+                        ebook_name + "." + default_audio_proc_format,
+                    )
                 )
                 audio_sentences_exist = any(
-                    Path(session["sentences_dir"]).rglob(f"*.{default_audio_proc_format}")
+                    Path(session["sentences_dir"]).rglob(
+                        f"*.{default_audio_proc_format}"
+                    )
                 )
                 if audio_pre_final_exist or audio_sentences_exist:
                     msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists. If you continue resume will restart from the last sentence converted!"

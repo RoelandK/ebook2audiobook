@@ -3258,13 +3258,11 @@ def build_interface(args: dict) -> gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["output_chapter_mode"] = val
-                return gr.update()
 
             def _change_gr_output_overwrite(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["output_overwrite"] = val
-                return gr.update()
 
             def _change_gr_abs_enabled(session_id, val):
                 session = context.get_session(session_id)
