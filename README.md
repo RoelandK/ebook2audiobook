@@ -113,7 +113,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see below](#sml-tags-available))
 - 🧩 **Optional custom model** using your own trained model (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
 - 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
-     <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
+     <i>(Contact us if you need additional fine-tuned models, or if you'd like to share yours to the official preset list)</i>
+- ⏩ **Incremental chapter updates**: Add chapters to an epub and re-run — only the new chapters are converted and appended to the existing m4b. No full rebuild needed. Detected automatically when the output file already has fewer chapters than the current ebook.
 
 
 ##  Hardware Requirements
