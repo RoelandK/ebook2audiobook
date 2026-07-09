@@ -4172,22 +4172,20 @@ def convert_ebook(args: dict) -> tuple:
                 else status_tags["CONVERTING"]
             )
             cleanup_models_cache()
+            session["process_dir"] = os.path.join(
+                session["session_dir"],
+                hashlib.md5(
+                    (ebook_name + ("_" + language if session.get("translate_enabled") else "")).encode()
+                ).hexdigest(),
+            )
+            session["chapters_dir"] = os.path.join(session["process_dir"], "chapters")
+            session["sentences_dir"] = os.path.join(session["chapters_dir"], "sentences")
             if session["is_gui_process"]:
                 session["final_name"] = (
                     ebook_name
                     + ("_" + language if session.get("translate_enabled") else "")
                     + "."
                     + session["output_format"]
-                )
-                session["process_dir"] = os.path.join(
-                    session["session_dir"],
-                    f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}",
-                )
-                session["chapters_dir"] = os.path.join(
-                    session["process_dir"], "chapters"
-                )
-                session["sentences_dir"] = os.path.join(
-                    session["chapters_dir"], "sentences"
                 )
             else:
                 session["system"] = DEVICE_SYSTEM
@@ -4203,37 +4201,18 @@ def convert_ebook(args: dict) -> tuple:
                     + "."
                     + session["output_format"],
                 )
-                session["process_dir"] = os.path.join(
-                    session["session_dir"],
-                    f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}",
-                )
-                session["chapters_dir"] = os.path.join(
-                    session["process_dir"], "chapters"
-                )
-                session["sentences_dir"] = os.path.join(
-                    session["chapters_dir"], "sentences"
-                )
                 session["voice_dir"] = os.path.join(
                     voices_dir, "__sessions", f"voice-{session_id}", language
                 )
                 os.makedirs(session["voice_dir"], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(
-                    os.path.join(
-                        session["process_dir"],
-                        ebook_name + "." + default_audio_proc_format,
-                    )
+                    os.path.join(session["process_dir"], ebook_name + "." + default_audio_proc_format)
                 )
                 audio_sentences_exist = any(
-                    Path(session["sentences_dir"]).rglob(
-                        f"*.{default_audio_proc_format}"
-                    )
+                    Path(session["sentences_dir"]).rglob(f"*.{default_audio_proc_format}")
                 )
                 if audio_pre_final_exist or audio_sentences_exist:
-                    msg = (
-                        f"Warning! This conversion already exists. Continue? WARNING! The whole previous conversion will be deleted!"
-                        if audio_pre_final_exist
-                        else f"Warning! Some sentences are already converted. Resume?"
-                    )
+                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists. If you continue resume will restart from the last sentence converted!"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
@@ -4388,8 +4367,8 @@ def convert_ebook(args: dict) -> tuple:
                             session["process_dir"],
                             f"{file_prefixes['current']}{session['filename_noext']}.db",
                         )
-                        checksum, error = compare_checksums(session_id)
-                        if not checksum or not os.path.exists(session["epub_path"]):
+                        ok_checksum, error = compare_checksums(session_id)
+                        if not ok_checksum or not os.path.exists(session["epub_path"]):
                             result_epub = convert2epub(session_id)
                             if result_epub:
                                 if os.path.exists(session["epub_path"]):
@@ -4417,7 +4396,6 @@ def convert_ebook(args: dict) -> tuple:
                                     session["blocks_orig_json"]
                                 )
                                 is_changed = False
-                                is_reset = False
                                 if blocks_orig:
                                     blocks = blocks_orig.get("blocks", [])
                                     new_blocks = []
@@ -4429,11 +4407,9 @@ def convert_ebook(args: dict) -> tuple:
                                                 block["id"] = str(uuid.uuid4())
                                                 is_changed = True
                                             new_blocks.append(block)
-                                        else:
-                                            is_reset = True
                                     blocks_orig["blocks"] = new_blocks
                                     session["blocks_orig"] = blocks_orig
-                                if is_changed or is_reset:
+                                if is_changed:
                                     save_json_blocks(session_id, "blocks_orig")
                                 if os.path.exists(session["blocks_saved_json"]):
                                     blocks_saved = load_json_blocks(
@@ -4441,7 +4417,7 @@ def convert_ebook(args: dict) -> tuple:
                                     )
                                     if blocks_saved:
                                         session["blocks_saved"] = blocks_saved
-                                        if is_changed or is_reset:
+                                        if is_changed:
                                             if is_changed:
                                                 blocks = blocks_saved.get("blocks", [])
                                                 for i, block in enumerate(blocks):
@@ -4451,10 +4427,6 @@ def convert_ebook(args: dict) -> tuple:
                                                         ][i]["id"]
                                                 blocks_saved["blocks"] = blocks
                                                 session["blocks_saved"] = blocks_saved
-                                            elif is_reset:
-                                                session["blocks_saved"] = copy.deepcopy(
-                                                    blocks_orig
-                                                )
                                             save_json_blocks(session_id, "blocks_saved")
                                 if os.path.exists(session["blocks_current_db"]):
                                     blocks_current = load_db_blocks(
@@ -4462,7 +4434,7 @@ def convert_ebook(args: dict) -> tuple:
                                     )
                                     if blocks_current:
                                         session["blocks_current"] = blocks_current
-                                        if is_changed or is_reset:
+                                        if is_changed:
                                             if is_changed:
                                                 blocks = blocks_current.get(
                                                     "blocks", []
@@ -4475,10 +4447,6 @@ def convert_ebook(args: dict) -> tuple:
                                                 blocks_current["blocks"] = blocks
                                                 session["blocks_current"] = (
                                                     blocks_current
-                                                )
-                                            elif is_reset:
-                                                session["blocks_current"] = (
-                                                    copy.deepcopy(blocks_orig)
                                                 )
                                             save_db_blocks(session_id)
                             epubBook = epub.read_epub(
@@ -4579,36 +4547,6 @@ def convert_ebook(args: dict) -> tuple:
                                                 session["blocks_orig"]
                                             )
                                             save_db_blocks(session_id)
-                                        # --- legacy upgrade: old snapshots may lack top-level scalars (TO REMOVE AFTER A WHILE) ---
-                                        for key in (
-                                            "blocks_orig",
-                                            "blocks_current",
-                                            "blocks_saved",
-                                        ):
-                                            snap = session.get(key)
-                                            if snap:
-                                                changed = False
-                                                if "voice" not in snap:
-                                                    snap["voice"] = session.get("voice")
-                                                    snap["tts_engine"] = session.get(
-                                                        "tts_engine"
-                                                    )
-                                                    snap["fine_tuned"] = session.get(
-                                                        "fine_tuned"
-                                                    )
-                                                    changed = True
-                                                if "page" not in snap:
-                                                    snap["page"] = 0
-                                                    changed = True
-                                                if changed:
-                                                    session[key] = snap
-                                                    if key == "blocks_current":
-                                                        save_db_blocks(session_id)
-                                                    else:
-                                                        save_json_blocks(
-                                                            session_id, key
-                                                        )
-                                        # --------------------------------#
                                         if session.get(
                                             "blocks_orig", {}
                                         ) and session.get("blocks_current", {}):

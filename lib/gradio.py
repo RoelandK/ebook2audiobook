@@ -2685,7 +2685,9 @@ def build_interface(args: dict) -> gr.Blocks:
                                             os.remove(vtt_path)
                                         process_dir = os.path.join(
                                             session["session_dir"],
-                                            f"{hashlib.md5(os.path.join(session['audiobooks_dir'], base_selected_name).encode()).hexdigest()}",
+                                            hashlib.md5(
+                                                selected_name.encode()
+                                            ).hexdigest(),
                                         )
                                         shutil.rmtree(process_dir, ignore_errors=True)
                                     msg = f"Audiobook {selected_name} deleted!"
@@ -3760,15 +3762,19 @@ def build_interface(args: dict) -> gr.Blocks:
                                                 and translate_target
                                                 != session.get("language")
                                             ):
-                                                stem = f"{stem_base}_{translate_target}"
+                                                language = translate_target
+                                                ebook_name = (
+                                                    f"{stem_base}_{translate_target}"
+                                                )
                                             else:
-                                                stem = stem_base
-                                            final_name = (
-                                                f"{stem}.{session['output_format']}"
-                                            )
+                                                language = session.get("language")
+                                                ebook_name = stem_base
+                                            final_name = f"{ebook_name}.{session['output_format']}"
                                             process_dir = os.path.join(
                                                 session["session_dir"],
-                                                f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(final_name).stem).encode()).hexdigest()}",
+                                                hashlib.md5(
+                                                    ebook_name.encode()
+                                                ).hexdigest(),
                                             )
                                             chapters_dir = os.path.join(
                                                 process_dir, "chapters"
@@ -3776,7 +3782,7 @@ def build_interface(args: dict) -> gr.Blocks:
                                             sentences_dir = os.path.join(
                                                 chapters_dir, "sentences"
                                             )
-                                            pre_name = f"{stem}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
+                                            pre_name = f"{ebook_name}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
                                             pre_file = os.path.join(
                                                 process_dir, pre_name
                                             )

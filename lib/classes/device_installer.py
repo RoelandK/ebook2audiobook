@@ -1033,7 +1033,6 @@ class DeviceInstaller():
         overrides = {}
         packages = []
         onnx_pkg = 'onnxruntime'
-        packages.append(onnx_pkg)
         if self.system != systems['MACOS']:
             onnx_pkg = self.check_onnxruntime_pkg()
         if onnx_pkg is not None:
@@ -1483,39 +1482,33 @@ class DeviceInstaller():
             return 1
 
     def check_voices(self)->int:
-        import urllib.request, zipfile
+        from pathlib import Path, PurePosixPath
+        from urllib.parse import urlparse, unquote
+        import zipfile
+        from huggingface_hub import hf_hub_download
         from tqdm import tqdm
-        voices_dir = './voices'
+        voices_dir:Path = Path('./voices')
         def has_wav()->bool:
-            return any(
-                f.endswith('.wav')
-                for _, _, files in os.walk(voices_dir)
-                for f in files
-            )
+            return any(voices_dir.rglob('*.wav'))
         try:
-            os.makedirs(voices_dir, exist_ok=True)
+            voices_dir.mkdir(parents=True, exist_ok=True)
             if has_wav():
                 return 0
-            zip_path = './voices.zip'
-            with urllib.request.urlopen(voices_url) as response:
-                total = int(response.headers.get('Content-Length', 0))
-                with open(zip_path, 'wb') as out, tqdm(
-                    total=total, unit='B', unit_scale=True, unit_divisor=1024, desc='Downloading voices'
-                ) as bar:
-                    while True:
-                        chunk = response.read(8192)
-                        if not chunk:
-                            break
-                        out.write(chunk)
-                        bar.update(len(chunk))
+            parts:tuple = PurePosixPath(unquote(urlparse(voices_url).path)).parts
+            i:int = parts.index('datasets')
+            repo_id:str = f"{parts[i+1]}/{parts[i+2]}"
+            r:int = parts.index('resolve')
+            filename:str = '/'.join(parts[r+2:])
+            zip_path:Path = Path(hf_hub_download(repo_id=repo_id, filename=filename, repo_type='dataset', local_dir='.'))
+            print(f'Downloaded {zip_path.stat().st_size / (1024*1024):.1f} MB to {zip_path}')
             with zipfile.ZipFile(zip_path, 'r') as zf:
-                members = zf.infolist()
-                desc = 'Extracting voices'
+                members:list = zf.infolist()
+                desc:str = 'Extracting voices'
                 for member in tqdm(members, desc=desc, unit='file'):
                     zf.extract(member, './')
-            os.remove(zip_path)
+            zip_path.unlink()
             return 0 if has_wav() else 1
         except Exception as e:
-            error = f'check_voices() error: {e}'
+            error:str = f'check_voices() error: {e}'
             print(error)
         return 1
