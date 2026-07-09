@@ -294,6 +294,9 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
                 if tensors:
                     seg = torch.cat(tensors, dim=-1)
                     self.audio_save(sentence_file, seg, self.params["samplerate"])
+            # ponytail: prevent VRAM drift — CUDA caching allocator grows on
+            # variable-length batches; free after each flush to stay flat.
+            torch.cuda.empty_cache()
         except Exception as e:
             error = f"batch flush error: {e}"
             print(error)
