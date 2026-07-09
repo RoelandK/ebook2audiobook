@@ -1,0 +1,38 @@
+diff --git a/lib/conf.py b/lib/conf.py
+index dd0e23e6d..d17f140b4 100644
+--- a/lib/conf.py
++++ b/lib/conf.py
+@@ -28,7 +28,7 @@ cli_options = [
+     '--speed', '--enable_text_splitting', '--text_temp',
+     '--waveform_temp', '--output_dir', '--version', 
+     '--docker_device', '--workflow', '--help'
+-]
++    , '--abs_enabled', '--abs_server_url', '--abs_api_token', '--abs_library_id']
+ 
+ workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
+ fernet_key = '0TkxI0iP0jmhT0vJ-AUpM2U4SAX3urVtrx1q8lwTynI='
+diff --git a/lib/core.py b/lib/core.py
+index 7c024fe51..c4849cb12 100644
+--- a/lib/core.py
++++ b/lib/core.py
+@@ -192,6 +192,10 @@ class SessionManager:
+             "output_split": default_output_split,
+             "output_split_hours": default_output_split_hours,
++            "abs_enabled": default_abs_enabled,
++            "abs_server_url": default_abs_server_url,
++            "abs_api_token": default_abs_api_token,
++            "abs_library_id": default_abs_library_id,
+             ####### Xtts settings
+             "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['temperature'],
+             #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['codec_temperature'],
+@@ -3395,6 +3399,10 @@ class SessionManager:
+             session['output_channel'] = str(args['output_channel'])
+             session['output_split'] = bool(args['output_split'])
+             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
++            session['abs_enabled'] = bool(args.get('abs_enabled', False))
++            session['abs_server_url'] = str(args.get('abs_server_url', ''))
++            session['abs_api_token'] = str(args.get('abs_api_token', ''))
++            session['abs_library_id'] = str(args.get('abs_library_id', ''))
+             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
+             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 

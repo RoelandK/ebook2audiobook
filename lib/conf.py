@@ -28,7 +28,8 @@ cli_options = [
     '--repetition_penalty', '--top_k', '--top_p', 
     '--speed', '--enable_text_splitting', '--text_temp',
     '--waveform_temp', '--output_dir', '--version', 
-    '--docker_device', '--workflow', '--help'
+    '--docker_device', '--workflow', '--help',
+    '--abs_enabled', '--abs_server_url', '--abs_api_token', '--abs_library_id',
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
