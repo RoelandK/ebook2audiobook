@@ -77,6 +77,11 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
                 val = self.session.get(f"qwen3_{key}")
                 if val is not None:
                     self.gen_params[key] = cast(val)
+            # optimizations: cap generation horizon and soften repetition penalty
+            if "max_new_tokens" not in self.gen_params:
+                self.gen_params["max_new_tokens"] = 2048
+            if "repetition_penalty" not in self.gen_params:
+                self.gen_params["repetition_penalty"] = 1.2
 
             # ponytail: cross-sentence batch buffer
             self._batch_buffer: list[dict] = []
@@ -248,15 +253,16 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
 
             if voice_prompt:
                 prompt_dict = self._prompt_items_to_dict(voice_prompt)
-                # replicate single prompt to batch size
                 prompt_dict = {k: v * len(texts) for k, v in prompt_dict.items()}
-                wavs, sr = self.engine.generate_voice_clone(
-                    text=texts,
-                    language=languages,
-                    voice_clone_prompt=prompt_dict,
-                    do_sample=True,
-                    **self.gen_params,
-                )
+                with torch.inference_mode():
+                    wavs, sr = self.engine.generate_voice_clone(
+                        text=texts,
+                        language=languages,
+                        voice_clone_prompt=prompt_dict,
+                        do_sample=True,
+                        non_streaming_mode=True,
+                        **self.gen_params,
+                    )
             else:
                 # no prompt — skip (shouldn't happen with Base model)
                 return
@@ -314,6 +320,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
             language=self.engine_langs.get(self.language, "Auto"),
             voice_clone_prompt=prompt_dict,
             do_sample=True,
+            non_streaming_mode=True,
             **self.gen_params,
         )
         audio_part = wavs[0] if isinstance(wavs, list) else wavs
