@@ -239,6 +239,12 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
             lang_name = buf[0]["lang"]  # same for all in block
             voice_prompt = buf[0].get("voice_prompt")
             languages = [lang_name] * len(texts)
+            import time as _time
+
+            _t0 = _time.time()
+            print(
+                f"  [batch] flushing {len(texts)} sentences to GPU @ {_time.strftime('%H:%M:%S')}"
+            )
 
             if voice_prompt:
                 prompt_dict = self._prompt_items_to_dict(voice_prompt)
@@ -254,6 +260,12 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name="qwen3tts"):
             else:
                 # no prompt — skip (shouldn't happen with Base model)
                 return
+
+            _elapsed = _time.time() - _t0
+            _rate = len(texts) / _elapsed if _elapsed > 0 else 0
+            print(
+                f"  [batch] done {len(texts)} sentences in {_elapsed:.1f}s ({_rate:.1f} sent/s)"
+            )
 
             for i, audio_part in enumerate(wavs):
                 if torch.is_tensor(audio_part):

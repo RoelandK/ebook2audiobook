@@ -2,6 +2,11 @@ import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warning
 
 from pathlib import Path
 
+# ponytail: force UTF-8 stdout/stderr — Windows cp1252 crashes on Unicode (→, …)
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping, install_info
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings

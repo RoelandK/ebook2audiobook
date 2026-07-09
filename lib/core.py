@@ -3882,18 +3882,18 @@ def assemble_audio_chunks(txt_file: str, out_file: str, is_gui_process: bool) ->
             on_progress=_on_progress,
         )
         if proc_pipe.result and os.path.exists(out_file):
-            msg = f"Completed → {out_file}"
+            msg = f"Completed -> {out_file}"
             print(msg)
             return True
         else:
-            error = f"Failed (proc_pipe) → {out_file}"
+            error = f"Failed (proc_pipe) -> {out_file}"
             print(error)
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False
     except Exception as e:
-        error = f"assemble_audio_chunks() Error: Failed to process {txt_file} → {out_file}: {e}"
+        error = f"assemble_audio_chunks() Error: Failed to process {txt_file} -> {out_file}: {e}"
         print(error)
         return False
 
