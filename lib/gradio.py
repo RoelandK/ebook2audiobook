@@ -1730,7 +1730,7 @@ def build_interface(args: dict) -> gr.Blocks:
                     if session and session.get("id", False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(30)])
+                            outputs = tuple([gr.update() for _ in range(28)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1847,7 +1847,7 @@ def build_interface(args: dict) -> gr.Blocks:
                 except Exception as e:
                     error = f"_restore_interface(): {e}"
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(30)])
+                outputs = tuple([gr.update() for _ in range(28)])
                 return outputs
 
             def _restore_audiobook_player(
